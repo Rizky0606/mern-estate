@@ -1,18 +1,26 @@
 import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
+import { useDispatch, useSelector } from "react-redux";
+import { AxiosError } from "axios";
 
 import { API } from "../../libs/configAPI";
-import { AxiosError } from "axios";
+import {
+  signInStart,
+  signInSuccess,
+  signInFailure,
+} from "../redux/user/userSlice";
 
 const SignIn = () => {
   const [formData, setFormData] = useState({
     email: "",
     password: "",
   });
-  const [isLoading, setIsLoading] = useState();
+
+  const { loading, error } = useSelector((state) => state.user);
 
   const navigate = useNavigate();
+  const dispatch = useDispatch();
 
   const handleChange = (e) => {
     setFormData({
@@ -24,10 +32,13 @@ const SignIn = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
+    dispatch(signInStart());
+
     try {
       const response = await API.post("/auth/signin", formData);
+      dispatch(signInSuccess(response.data.data));
       navigate("/");
-      setIsLoading(false);
+      // setIsLoading(false);
       toast.success(response.data.message, {
         position: "top-center",
         autoClose: 5000,
@@ -39,8 +50,8 @@ const SignIn = () => {
         theme: "light",
       });
     } catch (error) {
-      setIsLoading(false);
       if (error instanceof AxiosError) {
+        dispatch(signInFailure(error.response.data.message));
         toast.error(error.response.data.message, {
           position: "top-center",
           autoClose: 5000,
@@ -77,9 +88,8 @@ const SignIn = () => {
           <button
             type="submit"
             className="bg-slate-700 text-white p-3 rounded-lg uppercase hover:opacity-95 disabled:opacity-80"
-            onClick={() => setIsLoading(true)}
           >
-            {isLoading === true ? "Loading..." : "Sign In"}
+            {loading === true ? "Loading..." : "Sign In"}
           </button>
         </form>
         <div className="flex gap-2 mt-5">
